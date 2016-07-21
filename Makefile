@@ -38,6 +38,7 @@ all: dynamiclib staticlib test
 
 clean:
 	rm -f *.$(DYLIB_EXT) *.a *.o
+	make -C test clean
 
 install: all
 	install lib$(NAME).$(DYLIB_EXT) $(PREFIX)/lib
