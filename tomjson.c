@@ -166,7 +166,76 @@ static Jsonnode* parsearray(const char *str,const char **endp){
 }
 
 static Jsonnode* parseobject(const char *str,const char **endp){
-	(void)str; (void)endp; return NULL;
+	if(str[0]!='{')return NULL;
+	if(str[1]=='}'){
+		Jsonnode *node=malloc(sizeof(Jsonnode));
+		assert(node);
+		node->type=JSON_OBJECT;
+		node->objval.numkeys=0;
+		node->objval.keys=malloc(1);
+		assert(node->objval.keys);
+		node->objval.values=malloc(1);
+		assert(node->objval.values);
+		*endp=str+2;
+		return node;
+	}
+	int sz=16,numkeys=0;
+	char **keys=malloc(sz*sizeof(char*));
+	assert(keys);
+	Jsonnode **values=malloc(sz*sizeof(Jsonnode*));
+	assert(values);
+
+#define FAILRETURN \
+		do { \
+			for(int i=0;i<numkeys;i++)free(keys[i]); \
+			for(int i=0;i<numkeys;i++)json_free(values[i]); \
+			free(keys); free(values); \
+			return NULL; \
+		} while(0)
+
+	const char *cursor=str+1;
+	while(*cursor){
+		const char *keyend,*valend;
+		Jsonnode *keynode=parsestring(cursor,&keyend);
+		if(!keynode)FAILRETURN;
+		if(*keyend!=':'){
+			json_free(keynode);
+			FAILRETURN;
+		}
+		cursor=keyend+1;
+		Jsonnode *valnode=json_parse_endp(cursor,&valend);
+		if(!valnode){
+			json_free(keynode);
+			FAILRETURN;
+		}
+		if(numkeys==sz){
+			sz*=2;
+			keys=realloc(keys,sz*sizeof(char*));
+			assert(keys);
+			values=realloc(values,sz*sizeof(Jsonnode*));
+			assert(values);
+		}
+		keys[numkeys]=keynode->strval;
+		free(keynode);
+		values[numkeys]=valnode;
+		numkeys++;
+		cursor=valend;
+		if(*cursor=='}')break;
+		if(*cursor!=',')FAILRETURN;
+		cursor++;
+	}
+	if(*cursor!='}')return NULL;
+
+	Jsonnode *node=malloc(sizeof(Jsonnode));
+	assert(node);
+	node->type=JSON_OBJECT;
+	node->objval.numkeys=numkeys;
+	node->objval.keys=keys;
+	node->objval.values=values;
+	*endp=cursor+1;
+	return node;
+
+#undef FAILRETURN
 }
 
 
