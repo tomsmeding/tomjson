@@ -17,13 +17,13 @@ typedef struct Jsonnode Jsonnode;
 
 typedef struct Jsonarray{
 	int length;
-	Jsonnode *elems;  // array
+	Jsonnode **elems;  // array
 } Jsonarray;
 
 typedef struct Jsonobject{
 	int numkeys;
-	char *keys;  // array
-	Jsonnode *values;  // array
+	char **keys;  // array
+	Jsonnode **values;  // array
 } Jsonobject;
 
 struct Jsonnode{

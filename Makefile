@@ -32,9 +32,9 @@ endif
 .SECONDARY:
 
 
-.PHONY: all clean install uninstall remake reinstall dynamiclib staticlib
+.PHONY: all clean install uninstall remake reinstall dynamiclib staticlib test
 
-all: dynamiclib staticlib
+all: dynamiclib staticlib test
 
 clean:
 	rm -f *.$(DYLIB_EXT) *.a *.o
@@ -56,6 +56,9 @@ reinstall: clean install
 dynamiclib: lib$(NAME).$(DYLIB_EXT)
 
 staticlib: lib$(NAME).a
+
+test: staticlib
+	make -C test rerun
 
 
 %.o: %.c $(HEADER_FILES)

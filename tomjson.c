@@ -1,8 +1,12 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
 #include "tomjson.h"
+
+
+static Jsonnode* json_parse_endp(const char *str,const char **endp);
 
 
 static Jsonnode* parsenumber(const char *str,const char **endp){
@@ -35,7 +39,7 @@ static char readunicodehex(const char *str,int length){
 static Jsonnode* parsestring(const char *str,const char **endp){
 	if(str[0]!='"')return NULL;
 	int i,len=0;
-	for(i=0;str[i]&&str[i]!='"';i++){
+	for(i=1;str[i]&&str[i]!='"';i++){
 		len++;
 		if(str[i]!='\\')continue;
 		i++;
@@ -85,38 +89,104 @@ static Jsonnode* parsestring(const char *str,const char **endp){
 }
 
 static Jsonnode* parsebool(const char *str,const char **endp){
-	(void)str; (void)endp; assert(false);
+	if(memcmp(str,"true",4)==0||memcmp(str,"false",5)==0){
+		Jsonnode *node=malloc(sizeof(Jsonnode));
+		assert(node);
+		node->type=JSON_BOOL;
+		node->boolval=str[0]=='t';
+		*endp=str+4+(str[0]!='t');
+		return node;
+	}
+	return NULL;
 }
 
 static Jsonnode* parsenull(const char *str,const char **endp){
-	(void)str; (void)endp; assert(false);
+	if(memcmp(str,"null",4)==0){
+		Jsonnode *node=malloc(sizeof(Jsonnode));
+		assert(node);
+		node->type=JSON_NULL;
+		*endp=str+4;
+		return node;
+	}
+	return NULL;
 }
 
 static Jsonnode* parsearray(const char *str,const char **endp){
-	(void)str; (void)endp; assert(false);
+#define FAILRETURN \
+		do { \
+			for(int i=0;i<length;i++)json_free(elems[i]); \
+			free(elems); \
+			return NULL; \
+		} while(0)
+
+	if(str[0]!='[')return NULL;
+	const char *cursor=str+1;
+	if(*cursor==']'){
+		Jsonnode *node=malloc(sizeof(Jsonnode));
+		assert(node);
+		node->type=JSON_ARRAY;
+		node->arrval.length=0;
+		node->arrval.elems=malloc(1);
+		assert(node->arrval.elems);
+		*endp=cursor+1;
+		return node;
+	}
+
+	int sz=16,length=0;
+	Jsonnode **elems=malloc(sz*sizeof(Jsonnode*));
+	assert(elems);
+	//fprintf(stderr,"ARR: start\n");
+	while(*cursor){
+		const char *elemend;
+		Jsonnode *elem=json_parse_endp(cursor,&elemend);
+		//fprintf(stderr,"ARR: elem %p, parsing from %s\n",elem,cursor);
+		if(!elem)FAILRETURN;
+		if(length==sz){
+			sz*=2;
+			elems=realloc(elems,sz*sizeof(Jsonnode*));
+			assert(elems);
+		}
+		elems[length++]=elem;
+		cursor=elemend;
+		if(*cursor==']')break;
+		if(*cursor!=',')FAILRETURN;
+		cursor++;
+	}
+	if(*cursor!=']')return NULL;
+
+	Jsonnode *node=malloc(sizeof(Jsonnode));
+	assert(node);
+	node->type=JSON_ARRAY;
+	node->arrval.length=length;
+	node->arrval.elems=elems;
+	*endp=cursor+1;
+	return node;
+
+#undef FAILRETURN
 }
 
 static Jsonnode* parseobject(const char *str,const char **endp){
-	(void)str; (void)endp; assert(false);
+	(void)str; (void)endp; return NULL;
 }
 
 
-Jsonnode* json_parse(const char *str,int length){
+static Jsonnode* json_parse_endp(const char *str,const char **endp){
 	Jsonnode *node;
+	node=parsenumber(str,endp); if(node)return node;
+	node=parsestring(str,endp); if(node)return node;
+	node=parsebool  (str,endp); if(node)return node;
+	node=parsenull  (str,endp); if(node)return node;
+	node=parsearray (str,endp); if(node)return node;
+	node=parseobject(str,endp); if(node)return node;
+	return NULL;
+}
+
+Jsonnode* json_parse(const char *str,int length){
 	const char *endp;
-#define CHECKXX(type) \
-		node=parse##type(str,&endp); \
-		if(node){ \
-			if(endp-str==length)return node; \
-			json_free(node); \
-		}
-	CHECKXX(number)
-	CHECKXX(string)
-	CHECKXX(bool)
-	CHECKXX(null)
-	CHECKXX(array)
-	CHECKXX(object)
-#undef CHECKXX
+	Jsonnode *node=json_parse_endp(str,&endp);
+	if(!node)return NULL;
+	if(endp-str==length)return node;
+	json_free(node);
 	return NULL;
 }
 
@@ -142,7 +212,7 @@ void json_free(Jsonnode *node){
 			assert(node->arrval.length>=0);
 			assert(node->arrval.elems);
 			for(int i=0;i<node->arrval.length;i++){
-				json_free(node->arrval.elems+i);
+				json_free(node->arrval.elems[i]);
 			}
 			free(node->arrval.elems);
 			break;
@@ -152,7 +222,7 @@ void json_free(Jsonnode *node){
 			assert(node->objval.keys);
 			assert(node->objval.values);
 			for(int i=0;i<node->objval.numkeys;i++){
-				json_free(node->objval.values+i);
+				json_free(node->objval.values[i]);
 			}
 			free(node->objval.keys);
 			free(node->objval.values);

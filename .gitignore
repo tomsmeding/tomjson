@@ -3,3 +3,4 @@
 *.a
 *.dylib
 *.dSYM
+test/test
