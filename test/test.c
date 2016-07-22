@@ -6,7 +6,10 @@
 #include "../tomjson.h"
 
 
-#define CHECK(cond) CHECKX(cond,cond)
+#define STR_(x) #x
+#define STR(x) STR_(x)
+
+#define CHECK(cond) CHECKX(cond,#cond)
 
 #define CHECKX(cond,desc) \
 		do { \
@@ -32,7 +35,26 @@
 #define CHECKJSON(str) CHECKJSONX(str,)
 #define CHECKJSONERR(str) CHECKJSONX(str,!)
 
+
+#define CHECKBIDIRX(s1,s2,not) \
+		do { \
+			Jsonnode *n1=json_parse((s1),strlen((s1))); \
+			Jsonnode *n2=json_parse((s2),strlen((s2))); \
+			CHECKX(not json_equal(n1,n2),STR(not(s1 == s2))); \
+			char *s1s=json_stringify(n1),*s2s=json_stringify(n2); \
+			CHECK(not(strcmp(s1s,s2s)==0)); \
+		} while(0)
+
+#define CHECKBIDIREQ(s1,s2) CHECKBIDIRX(s1,s2,)
+#define CHECKBIDIRNEQ(s1,s2) CHECKBIDIRX(s1,s2,!)
+
+#define CHECKBIDIREQSAME(s) CHECKBIDIREQ(s,s)
+
+
 int main(void){
+	//volatile Jsonnode *n=json_parse("\"kaas\"",6);
+	//__asm("int3\n\t");
+
 	CHECKJSONERR("");
 	CHECKJSON("123");
 	CHECKJSON("21.4e-3");
@@ -65,6 +87,18 @@ int main(void){
 	CHECKJSONERR("{\"obj\":{\"1\":2.\"3\":4},\"x\":\"y\"}");
 	CHECKJSON("{\"obj\":{\"1\":2,\"3\":4},\"x\":\"y\"}");
 	CHECKJSONERR("{\"obj\":{\"1\":2.\"3\":4},\"x\":y}");
+
+
+	CHECKBIDIREQSAME("null");
+	CHECKBIDIREQSAME("false");
+	CHECKBIDIREQSAME("[1,2,3]");
+	printf("%s\n",json_stringify(json_parse("\"iets\"",6)));
+	CHECKBIDIREQSAME("\"iets\"");
+	CHECKBIDIRNEQ("true","false");
+	const char *str="{\"a\":\"\\u003c\t\n\fkaas\\\"\",\"iets\":[]}";
+	printf("%s\n",json_stringify(json_parse(str,strlen(str))));
+	CHECKBIDIREQSAME("{\"a\":\"\\u003c\t\n\fkaas\\\"\",\"iets\":[]}");
+
 
 	OK();
 }

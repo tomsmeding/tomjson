@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c11 -O2 -fwrapv
+CFLAGS = -Wall -Wextra -std=c11 -g -fwrapv
 
 BIN = test
 

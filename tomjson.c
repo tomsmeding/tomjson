@@ -64,7 +64,7 @@ static Jsonnode* parsestring(const char *str,const char **endp){
 	char *buf=malloc(len+1);
 	assert(buf);
 	int j;
-	for(i=0,j=0;str[i]!='"';i++){
+	for(i=1,j=0;str[i]!='"';i++){
 		if(str[i]=='\\'){
 			i++;
 			switch(str[i]){
@@ -330,7 +330,7 @@ static void stringrepr_inplace(char **bufp,int *szp,int *lenp,const char *str){
 		else if(str[i]>=32&&str[i]<=126)reslen++;
 		else reslen+=6;
 	}
-	bufextend(bufp,szp,lenp,reslen);
+	bufextend(bufp,szp,lenp,*lenp+reslen);
 
 	char *buf=*bufp;
 	*buf++='"';
@@ -359,6 +359,7 @@ static void stringrepr_inplace(char **bufp,int *szp,int *lenp,const char *str){
 		}
 	}
 	*buf++='"';
+	*buf='\0';
 
 	*lenp+=reslen;
 }
@@ -413,4 +414,45 @@ char* json_stringify(const Jsonnode *node){
 	buf[0]='\0';
 	json_stringify_inplace(node,&buf,&sz,&len);
 	return buf;
+}
+
+
+bool json_equal(const Jsonnode *a,const Jsonnode *b){
+	assert(a&&b);
+	if(a->type!=b->type)return false;
+	switch(a->type){
+		case JSON_NUMBER:
+			return a->numval==b->numval;
+
+		case JSON_STRING:
+			return strcmp(a->strval,b->strval)==0;
+
+		case JSON_BOOL:
+			return a->boolval==b->boolval;
+
+		case JSON_NULL:
+			return true;
+
+		case JSON_ARRAY:
+			if(a->arrval.length!=b->arrval.length)return false;
+			for(int i=0;i<a->arrval.length;i++){
+				if(!json_equal(a->arrval.elems[i],b->arrval.elems[i]))return false;
+			}
+			return true;
+
+		case JSON_OBJECT:
+			if(a->objval.numkeys!=b->objval.numkeys)return false;
+			for(int i=0;i<a->objval.numkeys;i++){
+				int j;
+				for(j=0;j<a->objval.numkeys;j++){
+					if(strcmp(a->objval.keys[i],b->objval.keys[j])==0)break;
+				}
+				if(j==a->objval.numkeys)return false;
+				if(!json_equal(a->objval.values[i],b->objval.values[j]))return false;
+			}
+			return true;
+
+		default:
+			assert(false);
+	}
 }

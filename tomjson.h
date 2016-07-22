@@ -40,3 +40,4 @@ struct Jsonnode{
 Jsonnode* json_parse(const char *str,int length);
 void json_free(Jsonnode *node);
 char* json_stringify(const Jsonnode *node); // assumes a sane structure
+bool json_equal(const Jsonnode *a,const Jsonnode *b); // assumes sane structures
