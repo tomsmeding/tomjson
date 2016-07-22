@@ -24,7 +24,7 @@ ifeq ($(UNAME),Darwin)
 	DYLIB_FLAGS = -dynamiclib
 else
 	DYLIB_EXT = so
-	DYLIB_FLAGS = -shared -fPIC
+	DYLIB_FLAGS = -shared
 endif
 
 
