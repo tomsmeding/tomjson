@@ -23,6 +23,12 @@ static bool ishex(char c){
 	return (c>='0'&&c<='9')||(c>='a'&&c<='f')||(c>='A'&&c<='F');
 }
 
+static char hexdigit(int n){
+	assert(n>=0&&n<16);
+	if(n<10)return '0'+n;
+	return 'a'+n-10;
+}
+
 static char readunicodehex(const char *str,int length){
 	unsigned char acc=0;
 	for(int i=0;i<length;i++){
@@ -301,4 +307,110 @@ void json_free(Jsonnode *node){
 			assert(false);
 	}
 	free(node);
+}
+
+
+static void bufextend(char **bufp,int *szp,int *lenp,int targetlen){
+	if(*lenp+targetlen<*szp)return;
+	*szp+=*szp/2+targetlen;
+	*bufp=realloc(*bufp,*szp);
+	assert(*bufp);
+}
+
+static void bufappend(char **bufp,int *szp,int *lenp,const char *str,int n){
+	bufextend(bufp,szp,lenp,*lenp+n);
+	memcpy(*bufp+*lenp,str,n+1);
+	*lenp+=n;
+}
+
+static void stringrepr_inplace(char **bufp,int *szp,int *lenp,const char *str){
+	int reslen=2;
+	for(int i=0;str[i];i++){
+		if(strchr("\"\\/\b\f\n\r\t",str[i])!=NULL)reslen+=2;
+		else if(str[i]>=32&&str[i]<=126)reslen++;
+		else reslen+=6;
+	}
+	bufextend(bufp,szp,lenp,reslen);
+
+	char *buf=*bufp;
+	*buf++='"';
+	for(int i=0;str[i];i++){
+		switch(str[i]){
+			case '"': *buf++='\\'; *buf++='"'; break;
+			case '\\': *buf++='\\'; *buf++='\\'; break;
+			case '\b': *buf++='\\'; *buf++='\b'; break;
+			case '\f': *buf++='\\'; *buf++='\f'; break;
+			case '\n': *buf++='\\'; *buf++='\n'; break;
+			case '\r': *buf++='\\'; *buf++='\r'; break;
+			case '\t': *buf++='\\'; *buf++='\t'; break;
+			case '/': *buf++='\\'; *buf++='/'; break;
+			default:
+				if(str[i]>=32&&str[i]<=126){
+					*buf++=str[i];
+				} else {
+					*buf++='\\';
+					*buf++='u';
+					*buf++='0';
+					*buf++='0';
+					*buf++=hexdigit((unsigned int)(unsigned char)str[i]/16);
+					*buf++=hexdigit((unsigned int)(unsigned char)str[i]%16);
+				}
+				break;
+		}
+	}
+	*buf++='"';
+
+	*lenp+=reslen;
+}
+
+static void json_stringify_inplace(const Jsonnode *node,char **bufp,int *szp,int *lenp){
+	static char tempbuf[64];
+	int nwr;
+	switch(node->type){
+		case JSON_NUMBER:
+			nwr=snprintf(tempbuf,sizeof(tempbuf),"%g",node->numval);
+			bufappend(bufp,szp,lenp,tempbuf,nwr);
+			break;
+
+		case JSON_STRING:
+			stringrepr_inplace(bufp,szp,lenp,node->strval);
+			break;
+
+		case JSON_BOOL:
+			bufappend(bufp,szp,lenp,node->boolval?"true":"false",4+!node->boolval);
+			break;
+
+		case JSON_NULL:
+			bufappend(bufp,szp,lenp,"null",4);
+			break;
+
+		case JSON_ARRAY:
+			bufappend(bufp,szp,lenp,"[",1);
+			for(int i=0;i<node->arrval.length;i++){
+				if(i!=0)bufappend(bufp,szp,lenp,",",1);
+				json_stringify_inplace(node->arrval.elems[i],bufp,szp,lenp);
+			}
+			bufappend(bufp,szp,lenp,"]",1);
+			break;
+
+		case JSON_OBJECT:
+			bufappend(bufp,szp,lenp,"{",1);
+			for(int i=0;i<node->objval.numkeys;i++){
+				if(i!=0)bufappend(bufp,szp,lenp,",",1);
+				stringrepr_inplace(bufp,szp,lenp,node->objval.keys[i]);
+				bufappend(bufp,szp,lenp,":",1);
+				json_stringify_inplace(node->objval.values[i],bufp,szp,lenp);
+			}
+			bufappend(bufp,szp,lenp,"}",1);
+			break;
+	}
+}
+
+char* json_stringify(const Jsonnode *node){
+	int sz=128,len=0;
+	char *buf=malloc(sz);
+	assert(buf);
+	buf[0]='\0';
+	json_stringify_inplace(node,&buf,&sz,&len);
+	return buf;
 }

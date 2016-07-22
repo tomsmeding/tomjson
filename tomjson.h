@@ -39,3 +39,4 @@ struct Jsonnode{
 // returns NULL on parse error
 Jsonnode* json_parse(const char *str,int length);
 void json_free(Jsonnode *node);
+char* json_stringify(const Jsonnode *node); // assumes a sane structure
