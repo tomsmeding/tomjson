@@ -356,17 +356,17 @@ static void stringrepr_inplace(char **bufp,int *szp,int *lenp,const char *str){
 	}
 	bufextend(bufp,szp,lenp,*lenp+reslen);
 
-	char *buf=*bufp;
+	char *buf=*bufp+*lenp;
 	*buf++='"';
 	for(int i=0;str[i];i++){
 		switch(str[i]){
 			case '"': *buf++='\\'; *buf++='"'; break;
 			case '\\': *buf++='\\'; *buf++='\\'; break;
-			case '\b': *buf++='\\'; *buf++='\b'; break;
-			case '\f': *buf++='\\'; *buf++='\f'; break;
-			case '\n': *buf++='\\'; *buf++='\n'; break;
-			case '\r': *buf++='\\'; *buf++='\r'; break;
-			case '\t': *buf++='\\'; *buf++='\t'; break;
+			case '\b': *buf++='\\'; *buf++='b'; break;
+			case '\f': *buf++='\\'; *buf++='f'; break;
+			case '\n': *buf++='\\'; *buf++='n'; break;
+			case '\r': *buf++='\\'; *buf++='r'; break;
+			case '\t': *buf++='\\'; *buf++='t'; break;
 			case '/': *buf++='\\'; *buf++='/'; break;
 			default:
 				if(str[i]>=32&&str[i]<=126){

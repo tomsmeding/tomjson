@@ -98,12 +98,10 @@ int main(void){
 	CHECKBIDIREQSAME("null");
 	CHECKBIDIREQSAME("false");
 	CHECKBIDIREQSAME("[1,2,3]");
-	printf("%s\n",json_stringify(json_parse("\"iets\"",6)));
 	CHECKBIDIREQSAME("\"iets\"");
 	CHECKBIDIRNEQ("true","false");
-	const char *str="{\"a\":\"\\u003c\t\n\fkaas\\\"\",\"iets\":[]}";
-	printf("%s\n",json_stringify(json_parse(str,strlen(str))));
-	CHECKBIDIREQSAME("{\"a\":\"\\u003c\t\n\fkaas\\\"\",\"iets\":[]}");
+	CHECKBIDIREQ("{\"a\":\"\\u003c\t\n\fkaas\\\"\",\"iets\":[]}",
+	             "{\"a\":\"<\\t\\n\\fkaas\\\"\",\"iets\":[]}");
 
 
 	OK();
