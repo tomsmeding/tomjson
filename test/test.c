@@ -41,8 +41,8 @@
 			Jsonnode *n1=json_parse((s1),strlen((s1))); \
 			Jsonnode *n2=json_parse((s2),strlen((s2))); \
 			CHECKX(not json_equal(n1,n2),STR(not(s1 == s2))); \
-			char *s1s=json_stringify(n1),*s2s=json_stringify(n2); \
-			CHECK(not(strcmp(s1s,s2s)==0)); \
+			char *s1s=json_stringify(n1); \
+			CHECK(not(strcmp(s1s,s2)==0)); \
 		} while(0)
 
 #define CHECKBIDIREQ(s1,s2) CHECKBIDIRX(s1,s2,)
@@ -54,6 +54,12 @@
 int main(void){
 	//volatile Jsonnode *n=json_parse("\"kaas\"",6);
 	//__asm("int3\n\t");
+
+	CHECKJSON("[\"hello\"]");
+	CHECKJSON("[ \"hello\" ]");
+	CHECKJSON("[ \"hello\", \"world\" ]");
+	CHECKJSON("[ 1, 2 ]");
+	CHECKJSON("{ \"kaas\": [ \"is\", \"lekker\" ] }");
 
 	CHECKJSONERR("");
 	CHECKJSON("123");

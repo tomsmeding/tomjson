@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <assert.h>
 
 #include "tomjson.h"
@@ -8,8 +9,19 @@
 
 static Jsonnode* json_parse_endp(const char *str,const char **endp);
 
+#define SKIPSPACES(str) \
+		do { \
+			while(*(str)&&isspace(*(str)))(str)++; \
+		} while(0)
+
+#define SKIPSPACESRETNULL(str) \
+		do { \
+			while(*(str)&&isspace(*(str)))(str)++; \
+			if(!*(str))return NULL; \
+		} while(0)
 
 static Jsonnode* parsenumber(const char *str,const char **endp){
+	SKIPSPACESRETNULL(str);
 	double r=strtod(str,(char**)endp);
 	if(*endp==str)return NULL;
 	Jsonnode *node=malloc(sizeof(Jsonnode));
@@ -43,6 +55,7 @@ static char readunicodehex(const char *str,int length){
 }
 
 static Jsonnode* parsestring(const char *str,const char **endp){
+	SKIPSPACESRETNULL(str);
 	if(str[0]!='"')return NULL;
 	int i,len=0;
 	for(i=1;str[i]&&str[i]!='"';i++){
@@ -95,6 +108,7 @@ static Jsonnode* parsestring(const char *str,const char **endp){
 }
 
 static Jsonnode* parsebool(const char *str,const char **endp){
+	SKIPSPACESRETNULL(str);
 	if(memcmp(str,"true",4)==0||memcmp(str,"false",5)==0){
 		Jsonnode *node=malloc(sizeof(Jsonnode));
 		assert(node);
@@ -107,6 +121,7 @@ static Jsonnode* parsebool(const char *str,const char **endp){
 }
 
 static Jsonnode* parsenull(const char *str,const char **endp){
+	SKIPSPACESRETNULL(str);
 	if(memcmp(str,"null",4)==0){
 		Jsonnode *node=malloc(sizeof(Jsonnode));
 		assert(node);
@@ -125,8 +140,10 @@ static Jsonnode* parsearray(const char *str,const char **endp){
 			return NULL; \
 		} while(0)
 
+	SKIPSPACESRETNULL(str);
 	if(str[0]!='[')return NULL;
 	const char *cursor=str+1;
+	SKIPSPACES(cursor);
 	if(*cursor==']'){
 		Jsonnode *node=malloc(sizeof(Jsonnode));
 		assert(node);
@@ -154,6 +171,7 @@ static Jsonnode* parsearray(const char *str,const char **endp){
 		}
 		elems[length++]=elem;
 		cursor=elemend;
+		SKIPSPACES(cursor);
 		if(*cursor==']')break;
 		if(*cursor!=',')FAILRETURN;
 		cursor++;
@@ -172,8 +190,11 @@ static Jsonnode* parsearray(const char *str,const char **endp){
 }
 
 static Jsonnode* parseobject(const char *str,const char **endp){
-	if(str[0]!='{')return NULL;
-	if(str[1]=='}'){
+	SKIPSPACESRETNULL(str);
+	if(*str!='{')return NULL;
+	str++;
+	SKIPSPACESRETNULL(str);
+	if(*str=='}'){
 		Jsonnode *node=malloc(sizeof(Jsonnode));
 		assert(node);
 		node->type=JSON_OBJECT;
@@ -182,7 +203,7 @@ static Jsonnode* parseobject(const char *str,const char **endp){
 		assert(node->objval.keys);
 		node->objval.values=malloc(1);
 		assert(node->objval.values);
-		*endp=str+2;
+		*endp=str+1;
 		return node;
 	}
 	int sz=16,numkeys=0;
@@ -199,16 +220,18 @@ static Jsonnode* parseobject(const char *str,const char **endp){
 			return NULL; \
 		} while(0)
 
-	const char *cursor=str+1;
+	const char *cursor=str;
 	while(*cursor){
 		const char *keyend,*valend;
 		Jsonnode *keynode=parsestring(cursor,&keyend);
 		if(!keynode)FAILRETURN;
+		SKIPSPACES(keyend);
 		if(*keyend!=':'){
 			json_free(keynode);
 			FAILRETURN;
 		}
 		cursor=keyend+1;
+		SKIPSPACES(cursor);
 		Jsonnode *valnode=json_parse_endp(cursor,&valend);
 		if(!valnode){
 			json_free(keynode);
@@ -226,6 +249,7 @@ static Jsonnode* parseobject(const char *str,const char **endp){
 		values[numkeys]=valnode;
 		numkeys++;
 		cursor=valend;
+		SKIPSPACES(cursor);
 		if(*cursor=='}')break;
 		if(*cursor!=',')FAILRETURN;
 		cursor++;
@@ -247,12 +271,12 @@ static Jsonnode* parseobject(const char *str,const char **endp){
 
 static Jsonnode* json_parse_endp(const char *str,const char **endp){
 	Jsonnode *node;
-	node=parsenumber(str,endp); if(node)return node;
-	node=parsestring(str,endp); if(node)return node;
-	node=parsebool  (str,endp); if(node)return node;
-	node=parsenull  (str,endp); if(node)return node;
-	node=parsearray (str,endp); if(node)return node;
-	node=parseobject(str,endp); if(node)return node;
+	node=parsenumber(str,endp); if(node){SKIPSPACES(*endp); return node;}
+	node=parsestring(str,endp); if(node){SKIPSPACES(*endp); return node;}
+	node=parsebool  (str,endp); if(node){SKIPSPACES(*endp); return node;}
+	node=parsenull  (str,endp); if(node){SKIPSPACES(*endp); return node;}
+	node=parsearray (str,endp); if(node){SKIPSPACES(*endp); return node;}
+	node=parseobject(str,endp); if(node){SKIPSPACES(*endp); return node;}
 	return NULL;
 }
 
