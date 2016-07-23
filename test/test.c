@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <assert.h>
 
 #include "../tomjson.h"
 
@@ -20,13 +22,10 @@
 			printf("%s%s%s\n" CNORM, ok ? "" : CERROR, prefix, ok ? COK "OK" : "FAIL"); \
 		}
 
-#define CHECK(cond) \
+#define INCCOUNTS(cond) \
 		do { \
-			ok = true; \
-			bool _c=(cond); \
 			ran++; \
-			passed += _c; \
-			if (!_c) ok = false; \
+			passed += (ok = (cond)); \
 		} while(0)
 
 
@@ -36,9 +35,9 @@
 			asprintf(&printbuf, "    %s'%s': ", not false ? "NOT " : "", str); \
 			Jsonnode *_n=json_parse(str,strlen(str)); \
 			if(not false) \
-				CHECK(!_n); \
+				INCCOUNTS(!_n); \
 			else \
-				CHECK(_n); \
+				INCCOUNTS(_n); \
 			if(_n)json_free(_n); \
 			PRINTOK(printbuf); \
 			free(printbuf); \
@@ -54,9 +53,9 @@
 			asprintf(&printbuf, "    '%s' %c= '%s': ", s1, not false ? '!' : '=', s2); \
 			Jsonnode *n1=json_parse((s1),strlen((s1))); \
 			Jsonnode *n2=json_parse((s2),strlen((s2))); \
-			CHECK(not json_equal(n1,n2)); \
+			INCCOUNTS(not json_equal(n1,n2)); \
 			char *s1s=json_stringify(n1); \
-			CHECK(not(strcmp(s1s,s2)==0)); \
+			INCCOUNTS(not(strcmp(s1s,s2)==0)); \
 			PRINTOK(printbuf); \
 			free(printbuf); \
 		} while(0)
@@ -65,6 +64,25 @@
 #define CHECKBIDIRNEQ(s1,s2) CHECKBIDIRX(s1,s2,!)
 
 #define CHECKBIDIREQSAME(s) CHECKBIDIREQ(s,s)
+
+
+#define CHECKBIDIRXNODE(n1,n2,not) \
+		do { \
+			char *printbuf; \
+			asprintf(&printbuf, "    '%s' %c~ '%s': ", #n1, not false ? '!' : '~', #n2); \
+			char *s1=json_stringify((n1)); \
+			char *s2=json_stringify((n2)); \
+			INCCOUNTS(not(strcmp(s1,s2)==0)); \
+			Jsonnode *n1n=json_parse(s1,strlen(s1)); \
+			INCCOUNTS(not json_equal(n1n,n2)); \
+			PRINTOK(printbuf); \
+			free(printbuf); \
+		} while(0)
+
+#define CHECKBIDIREQNODE(n1,n2) CHECKBIDIRXNODE(n1,n2,)
+#define CHECKBIDIRNEQNODE(n1,n2) CHECKBIDIRXNODE(n1,n2,!)
+
+#define CHECKBIDIREQSAMENODE(n) CHECKBIDIREQNODE(n,n)
 
 
 #define SECTION(str, block) { \
@@ -78,8 +96,67 @@
 }
 
 
+Jsonnode* peanozero(void){
+	static const char *basestr="[{\"a\":false,\"b\xff\":[1,null,[]],\"\":{\"kaas\":[{}]}}]";
+	return json_parse(basestr,strlen(basestr));
+}
+
+void peanosucc(Jsonnode *n){
+	Jsonnode *copy=json_copy(n);
+	n->arrval.length++;
+	n->arrval.elems=realloc(n->arrval.elems,n->arrval.length*sizeof(Jsonnode*));
+	n->arrval.elems[n->arrval.length-1]=copy;
+}
+
+Jsonnode* peanonumber(int n){
+	Jsonnode *node=peanozero();
+	while(n-->0)peanosucc(node);
+	return node;
+}
+
+
+void perftest(void){
+#define TIMEIT(block) \
+		do { \
+			clock_t start=clock(); assert(start!=-1); \
+			block \
+			clock_t end=clock(); assert(end!=-1); \
+			clock_t diff=end-start; \
+			printf("[%1.6lfs] %s\n",(double)diff/CLOCKS_PER_SEC,#block); \
+		} while(0)
+
+	Jsonnode *n;
+	TIMEIT(n=peanonumber(20););
+	char *s;
+	TIMEIT(s=json_stringify(n););
+	TIMEIT(json_free(n););
+	printf("string length: %lu\n",strlen(s));
+
+#undef TIMEIT
+}
+
 int main(int argc,char **argv){
-	bool quietmode = argc==2 && strcmp(argv[1],"-q")==0;
+	bool quietmode=false,runperf=false;
+	for(int i=1;i<argc;i++){
+		if(argv[i][0]!='-'){
+			fprintf(stderr,"Unrecognised argument '%s'\n",argv[i]);
+			return 1;
+		}
+		for(int j=1;argv[i][j];j++){
+			switch(argv[i][j]){
+				case 'q': quietmode=true; break;
+				case 'p': runperf=true; break;
+				default:
+					fprintf(stderr,"Unrecognised flag '-%c'\n",argv[i][j]);
+					return 1;
+			}
+		}
+	}
+
+	if(runperf){
+		perftest();
+		return 0;
+	}
 
 	int ranTotal = 0,
 	    passedTotal = 0;
@@ -134,6 +211,10 @@ int main(int argc,char **argv){
 		CHECKJSON("[ 1, 2 ]");
 
 		CHECKBIDIREQSAME("[1,2,3]");
+		{Jsonnode *n=peanonumber(0); CHECKBIDIREQSAMENODE(n); json_free(n);}
+		{Jsonnode *n=peanonumber(1); CHECKBIDIREQSAMENODE(n); json_free(n);}
+		{Jsonnode *n=peanonumber(2); CHECKBIDIREQSAMENODE(n); json_free(n);}
+		{Jsonnode *n=peanonumber(7); CHECKBIDIREQSAMENODE(n); json_free(n);}
 	});
 
 	SECTION("objects", {
