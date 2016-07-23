@@ -26,6 +26,7 @@ char *color(const char *str, const char *color) {
 
 #define CHECK(cond) \
 		do { \
+			ok = true; \
 			bool _c=(cond); \
 			ran++; \
 			passed += _c; \
@@ -68,7 +69,7 @@ char *color(const char *str, const char *color) {
 
 #define SECTION(str, block) { \
 	int ran = 0, passed = 0; \
-	bool ok = true; \
+	bool ok; \
 	printf("  %s \n", str); \
 	block; \
 	ranTotal += ran; \
