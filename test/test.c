@@ -136,6 +136,10 @@ int main(void){
 
 	SECTION("objects", {
 		CHECKJSON("{}");
+		CHECKJSONERR("{ \"a\":, }");
+		CHECKJSONERR("{ \"a\": 1 \"b\": 2 }");
+		CHECKJSONERR("{ \"a\": 1: \"b\": 2 }");
+		CHECKJSONERR("{ \"a\": 1, \"b\": 2, }");
 		CHECKJSON("{\"a\":[1,2],\"kaas\":null}");
 		CHECKJSONERR("{\"obj\":{\"1\":2.\"3\":4},\"x\":\"y\"}");
 		CHECKJSON("{\"obj\":{\"1\":2,\"3\":4},\"x\":\"y\"}");
