@@ -24,7 +24,7 @@ char *color(const char *str, const char *color) {
 	return buf;
 }
 
-#define PRINTOK() printf("%s\n", color(ok?"OK":"FAIL", ok?"green":"red"));
+#define PRINTOK(prefix) printf("%s%s\n", prefix, color(ok?"OK":"FAIL", ok?"green":"red"));
 
 #define CHECK(cond) \
 		do { \
@@ -38,14 +38,16 @@ char *color(const char *str, const char *color) {
 
 #define CHECKJSONX(str,not) \
 		do { \
-			printf("    %s'%s': ", not false ? "NOT " : "", str); \
+			char *printbuf; \
+			asprintf(&printbuf, "    %s'%s': ", not false ? "NOT " : "", str); \
 			Jsonnode *_n=json_parse(str,strlen(str)); \
 			if(not false) \
 				CHECK(!_n); \
 			else \
 				CHECK(_n); \
 			if(_n)json_free(_n); \
-			PRINTOK(); \
+			PRINTOK(printbuf); \
+			free(printbuf); \
 		} while(0)
 
 #define CHECKJSON(str) CHECKJSONX(str,)
@@ -54,13 +56,15 @@ char *color(const char *str, const char *color) {
 
 #define CHECKBIDIRX(s1,s2,not) \
 		do { \
-			printf("    '%s' %c= '%s': ", s1, not false ? '!' : '=', s2); \
+			char *printbuf; \
+			asprintf(&printbuf, "    '%s' %c= '%s': ", s1, not false ? '!' : '=', s2); \
 			Jsonnode *n1=json_parse((s1),strlen((s1))); \
 			Jsonnode *n2=json_parse((s2),strlen((s2))); \
 			CHECK(not json_equal(n1,n2)); \
 			char *s1s=json_stringify(n1); \
 			CHECK(not(strcmp(s1s,s2)==0)); \
-			PRINTOK(); \
+			PRINTOK(printbuf); \
+			free(printbuf); \
 		} while(0)
 
 #define CHECKBIDIREQ(s1,s2) CHECKBIDIRX(s1,s2,)
