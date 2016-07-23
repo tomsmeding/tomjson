@@ -14,7 +14,7 @@ clean:
 remake: clean all
 
 run: all
-	./$(BIN)
+	./$(BIN) -q
 
 rerun: clean run
 

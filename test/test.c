@@ -24,7 +24,8 @@ char *color(const char *str, const char *color) {
 	return buf;
 }
 
-#define PRINTOK(prefix) printf("%s%s\n", prefix, color(ok?"OK":"FAIL", ok?"green":"red"));
+#define PRINTOK(prefix) \
+		if (!quietmode || !ok) printf("%s%s\n", prefix, color(ok?"OK":"FAIL", ok?"green":"red"));
 
 #define CHECK(cond) \
 		do { \
@@ -76,15 +77,17 @@ char *color(const char *str, const char *color) {
 #define SECTION(str, block) { \
 	int ran = 0, passed = 0; \
 	bool ok; \
-	printf("  %s \n", str); \
+	if (!quietmode) printf("  %s \n", str); \
 	block; \
 	ranTotal += ran; \
 	passedTotal += passed; \
-	printf("\n"); \
+	if (!quietmode) printf("\n"); \
 }
 
 
-int main(void){
+int main(int argc,char **argv){
+	bool quietmode = argc==2 && strcmp(argv[1],"-q")==0;
+
 	int ranTotal = 0,
 	    passedTotal = 0;
 
