@@ -36,8 +36,10 @@ struct Jsonnode{
 };
 
 
-// returns NULL on parse error
-Jsonnode* json_parse(const char *str,int length);
+Jsonnode* json_parse(const char *str,int length); // returns NULL on parse error
+
+// the following functions assume a sane structure
 void json_free(Jsonnode *node);
-char* json_stringify(const Jsonnode *node); // assumes a sane structure
-bool json_equal(const Jsonnode *a,const Jsonnode *b); // assumes sane structures
+char* json_stringify(const Jsonnode *node);
+bool json_equal(const Jsonnode *a,const Jsonnode *b);
+Jsonnode* json_copy(const Jsonnode *node);

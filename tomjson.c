@@ -480,3 +480,62 @@ bool json_equal(const Jsonnode *a,const Jsonnode *b){
 			assert(false);
 	}
 }
+
+
+static char* copyofstring(const char *str){
+	assert(str);
+	int len=strlen(str);
+	char *buf=malloc(len+1);
+	assert(buf);
+	memcpy(buf,str,len+1);
+	return buf;
+}
+
+Jsonnode* json_copy(const Jsonnode *node){
+	assert(node);
+	Jsonnode *dst=malloc(sizeof(Jsonnode));
+	assert(dst);
+	dst->type=node->type;
+	switch(node->type){
+		case JSON_NUMBER:
+			dst->numval=node->numval;
+			break;
+
+		case JSON_STRING:
+			dst->strval=copyofstring(node->strval);
+			break;
+
+		case JSON_BOOL:
+			dst->boolval=node->boolval;
+			break;
+
+		case JSON_NULL:
+			break;
+
+		case JSON_ARRAY:{
+			int len=node->arrval.length;
+			dst->arrval.length=len;
+			dst->arrval.elems=malloc(len*sizeof(Jsonnode*));
+			assert(dst->arrval.elems);
+			for(int i=0;i<len;i++){
+				dst->arrval.elems[i]=json_copy(node->arrval.elems[i]);
+			}
+			break;
+		}
+
+		case JSON_OBJECT:{
+			int nk=node->objval.numkeys;
+			dst->objval.numkeys=nk;
+			dst->objval.keys=malloc(nk*sizeof(char*));
+			assert(dst->objval.keys);
+			dst->objval.values=malloc(nk*sizeof(Jsonnode*));
+			assert(dst->objval.values);
+			for(int i=0;i<nk;i++){
+				dst->objval.keys[i]=copyofstring(node->objval.keys[i]);
+				dst->objval.values[i]=json_copy(node->objval.values[i]);
+			}
+			break;
+		}
+	}
+	return dst;
+}
