@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c11 -g -fwrapv -fPIC
+CFLAGS = -Wall -Wextra -std=c11 -O2 -fwrapv -fPIC
 
 # Set to /usr/local to install in the system directories
 PREFIX = $(HOME)/prefix
