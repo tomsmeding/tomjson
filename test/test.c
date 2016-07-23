@@ -148,7 +148,7 @@ int main(void){
 		CHECKJSONERR("{\"obj\":{\"1\":2.\"3\":4},\"x\":y}");
 		CHECKJSON("{ \"kaas\": [ \"is\", \"lekker\" ] }");
 
-		CHECKBIDIREQ("{\"a\":\"\\u003c\t\n\fkaas\\\"\",\"iets\":[]}",
+		CHECKBIDIREQ("{\"a\":\"\\u003c\t\\n\\fkaas\\\"\",\"iets\":[]}",
 		             "{\"a\":\"<\\t\\n\\fkaas\\\"\",\"iets\":[]}");
 	});
 
