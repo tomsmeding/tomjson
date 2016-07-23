@@ -1,3 +1,4 @@
+#define _GNU_SOURCE //asprintf
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,12 +18,13 @@ const char *colorCode(const char *color) {
 }
 
 char *color(const char *str, const char *color) {
-	char *x;
-	asprintf(&x, "%s%s%s", colorCode(color), str, colorCode(""));
-	return x;
+	static char *buf=NULL;
+	if(buf)free(buf);
+	asprintf(&buf, "%s%s%s", colorCode(color), str, colorCode(""));
+	return buf;
 }
 
-#define PRINTOK() printf("%s\n", ok ? color("OK", "green") : color("FAIL", "red"))
+#define PRINTOK() printf("%s\n", color(ok?"OK":"FAIL", ok?"green":"red"));
 
 #define CHECK(cond) \
 		do { \
