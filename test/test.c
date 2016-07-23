@@ -5,27 +5,20 @@
 
 #include "../tomjson.h"
 
-const char *colorCode(const char *color) {
-	if      (strcmp(color, "black"  ) == 0) return "\x1B[30m";
-	else if (strcmp(color, "red"    ) == 0) return "\x1B[31m";
-	else if (strcmp(color, "green"  ) == 0) return "\x1B[32m";
-	else if (strcmp(color, "yellow" ) == 0) return "\x1B[33m";
-	else if (strcmp(color, "blue"   ) == 0) return "\x1B[34m";
-	else if (strcmp(color, "magenta") == 0) return "\x1B[35m";
-	else if (strcmp(color, "cyan"   ) == 0) return "\x1B[36m";
-	else if (strcmp(color, "white"  ) == 0) return "\x1B[37m";
-	return "\033[0m";
-}
 
-char *color(const char *str, const char *color) {
-	static char *buf=NULL;
-	if(buf)free(buf);
-	asprintf(&buf, "%s%s%s", colorCode(color), str, colorCode(""));
-	return buf;
-}
+#define CRED "\x1B[31m"
+#define CGREEN "\x1B[32m"
+#define CBOLD "\x1B[1m"
+#define CNORM "\x1B[0m"
+
+#define COK CGREEN
+#define CERROR CRED CBOLD
+
 
 #define PRINTOK(prefix) \
-		if (!quietmode || !ok) printf("%s%s\n", prefix, color(ok?"OK":"FAIL", ok?"green":"red"));
+		if (!quietmode || !ok) { \
+			printf("%s%s%s\n" CNORM, ok ? "" : CERROR, prefix, ok ? COK "OK" : "FAIL"); \
+		}
 
 #define CHECK(cond) \
 		do { \
@@ -160,6 +153,12 @@ int main(int argc,char **argv){
 	});
 
 	bool successful = passedTotal == ranTotal;
-	printf(color("%d failed out of %d\n", successful ? "green" : "red"), ranTotal - passedTotal, ranTotal);
-	return successful ? 0 : 1;
+	if (quietmode && successful) {
+		printf(COK "OK\n" CNORM);
+	} else if (successful) {
+		printf(COK "All tests OK\n" CNORM);
+	} else {
+		printf(CERROR "%d of %d failed\n" CNORM, ranTotal - passedTotal, ranTotal);
+	}
+	return !successful;
 }
