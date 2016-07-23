@@ -135,6 +135,14 @@ void perftest(void){
 #undef TIMEIT
 }
 
+void usage(const char *argv0){
+	fprintf(stderr,
+		"Usage: %s [-pq]\n"
+		"    -p  Run performance test instead of regression suite\n"
+		"    -q  Don't explain everything\n",
+		argv0);
+}
+
 int main(int argc,char **argv){
 	bool quietmode=false,runperf=false;
 	for(int i=1;i<argc;i++){
@@ -146,6 +154,7 @@ int main(int argc,char **argv){
 			switch(argv[i][j]){
 				case 'q': quietmode=true; break;
 				case 'p': runperf=true; break;
+				case 'h': usage(argv[0]); return 0; break;
 				default:
 					fprintf(stderr,"Unrecognised flag '-%c'\n",argv[i][j]);
 					return 1;
