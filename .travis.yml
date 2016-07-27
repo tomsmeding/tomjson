@@ -1,0 +1,6 @@
+language: c
+before_script:
+  - make clean staticlib
+  - make -C test all
+script:
+  - ./test/test
