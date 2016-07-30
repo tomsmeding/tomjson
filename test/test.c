@@ -180,6 +180,11 @@ int main(int argc,char **argv){
 		CHECKJSON("123");
 		CHECKJSON("21.4e-3");
 		CHECKJSONERR("123a");
+
+		// non standard complaint extensions
+		CHECKJSON("NaN");
+		CHECKJSON("Infinity");
+		CHECKJSON("-Infinity");
 	});
 
 	SECTION("strings", {
