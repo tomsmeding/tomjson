@@ -84,6 +84,17 @@
 
 #define CHECKBIDIREQSAMENODE(n) CHECKBIDIREQNODE(n,n)
 
+#define CHECKNODEGEN(obj,s) \
+	do { \
+		char *printbuf; \
+		asprintf(&printbuf, "    BUILD '%s': ", s); \
+		char *str = json_stringify(obj); \
+		INCCOUNTS(strcmp(str,s)==0); \
+		PRINTOK(printbuf); \
+		json_free(obj); \
+		free(printbuf); \
+	} while(0)
+
 
 #define SECTION(str, block) { \
 	int ran = 0, passed = 0; \
@@ -185,6 +196,9 @@ int main(int argc,char **argv){
 		CHECKJSON("NaN");
 		CHECKJSON("Infinity");
 		CHECKJSON("-Infinity");
+
+		Jsonnode *num = json_make_num(100.0);
+		CHECKNODEGEN(num, "100");
 	});
 
 	SECTION("strings", {
@@ -196,6 +210,9 @@ int main(int argc,char **argv){
 		CHECKJSONERR("\"dingen\\\"");
 
 		CHECKBIDIREQSAME("\"iets\"");
+
+		Jsonnode *strval = json_make_str("kaas");
+		CHECKNODEGEN(strval, "\"kaas\"");
 	});
 
 	SECTION("identifiers", {
@@ -207,6 +224,11 @@ int main(int argc,char **argv){
 		CHECKBIDIREQSAME("null");
 		CHECKBIDIREQSAME("false");
 		CHECKBIDIRNEQ("true","false");
+
+		Jsonnode *b = json_make_bool(true);
+		CHECKNODEGEN(b, "true");
+		Jsonnode *null = json_make_null();
+		CHECKNODEGEN(null, "null");
 	});
 
 	SECTION("arrays", {
@@ -229,6 +251,10 @@ int main(int argc,char **argv){
 		{Jsonnode *n=peanonumber(1); CHECKBIDIREQSAMENODE(n); json_free(n);}
 		{Jsonnode *n=peanonumber(2); CHECKBIDIREQSAMENODE(n); json_free(n);}
 		{Jsonnode *n=peanonumber(7); CHECKBIDIREQSAMENODE(n); json_free(n);}
+
+		Jsonnode *arr = json_make_array();
+		json_array_add_item(&arr->arrval, json_make_str("kaas"));
+		CHECKNODEGEN(arr, "[\"kaas\"]");
 	});
 
 	SECTION("objects", {
@@ -245,6 +271,10 @@ int main(int argc,char **argv){
 
 		CHECKBIDIREQ("{\"a\":\"\\u003c\t\\n\\fkaas\\\"\",\"iets\":[]}",
 		             "{\"a\":\"<\\t\\n\\fkaas\\\"\",\"iets\":[]}");
+
+		Jsonnode *obj = json_make_object();
+		json_object_add_key(&obj->objval, "kaas", json_make_str("lekker"));
+		CHECKNODEGEN(obj, "{\"kaas\":\"lekker\"}");
 	});
 
 	bool successful = passedTotal == ranTotal;
