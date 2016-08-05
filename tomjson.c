@@ -543,6 +543,7 @@ Jsonnode* json_copy(const Jsonnode *node){
 
 Jsonnode *json_make_num(double val) {
 	Jsonnode *node = malloc(sizeof(Jsonnode));
+	assert(node);
 	node->type = JSON_NUMBER;
 	node->numval = val;
 	return node;
@@ -550,6 +551,7 @@ Jsonnode *json_make_num(double val) {
 
 Jsonnode *json_make_str(char *val) {
 	Jsonnode *node = malloc(sizeof(Jsonnode));
+	assert(node);
 	node->type = JSON_STRING;
 	node->strval = copyofstring(val);
 	return node;
@@ -557,6 +559,7 @@ Jsonnode *json_make_str(char *val) {
 
 Jsonnode *json_make_bool(bool val) {
 	Jsonnode *node = malloc(sizeof(Jsonnode));
+	assert(node);
 	node->type = JSON_BOOL;
 	node->boolval = val;
 	return node;
@@ -564,66 +567,55 @@ Jsonnode *json_make_bool(bool val) {
 
 Jsonnode *json_make_null(void) {
 	Jsonnode *node = malloc(sizeof(Jsonnode));
+	assert(node);
 	node->type = JSON_NULL;
 	return node;
 }
 
 Jsonnode *json_make_object(void) {
 	Jsonnode *node = malloc(sizeof(Jsonnode));
-	Jsonobject obj = {
-		.numkeys = 0,
-		.keys = malloc(sizeof(char*)),
-		.values = malloc(sizeof(Jsonnode*)),
-	};
+	assert(node);
 
 	node->type = JSON_OBJECT;
-	node->objval = obj;
+	node->objval.numkeys = 0;
+	node->objval.keys = malloc(1);
+	assert(node->objval.keys);
+	node->objval.values = malloc(1);
+	assert(node->objval.values);
 
 	return node;
 }
 
 Jsonnode *json_make_array(void) {
 	Jsonnode *node = malloc(sizeof(Jsonnode));
-	Jsonarray arr = {
-		.length = 0,
-		.elems = malloc(sizeof(Jsonnode*)),
-	};
+	assert(node);
 
 	node->type = JSON_ARRAY;
-	node->arrval = arr;
+	node->arrval.length = 0;
+	node->arrval.elems = malloc(1);
+	assert(node->arrval.elems);
 
 	return node;
 }
 
 
-unsigned int json_array_add_item(Jsonarray *arr, Jsonnode *item) {
+void json_array_add_item(Jsonarray *arr, Jsonnode *item) {
 	arr->length++;
 
-	Jsonnode **elems = realloc(arr->elems, sizeof(Jsonnode*)*arr->length);
-	if (!elems) {
-		return 1;
-	}
+	arr->elems = realloc(arr->elems, arr->length*sizeof(Jsonnode*));
+	assert(arr->elems);
 
-	elems[arr->length - 1] = json_copy(item);
-	arr->elems = elems;
-
-	return 0;
+	arr->elems[arr->length - 1] = json_copy(item);
 }
 
-unsigned int json_object_add_key(Jsonobject *obj, char *key, Jsonnode *val) {
+void json_object_add_key(Jsonobject *obj, const char *key, Jsonnode *val) {
 	obj->numkeys++;
 
-	char **keys = realloc(obj->keys, sizeof(char*)*obj->numkeys);
-	Jsonnode **values = realloc(obj->values, sizeof(Jsonnode*)*obj->numkeys);
-	if (!keys || !values) {
-		return 1;
-	}
+	obj->keys = realloc(obj->keys, obj->numkeys*sizeof(char*));
+	assert(obj->keys);
+	obj->values = realloc(obj->values, obj->numkeys*sizeof(Jsonnode*));
+	assert(obj->values);
 
-	keys[obj->numkeys - 1] = copyofstring(key);
-	obj->keys = keys;
-
-	values[obj->numkeys - 1] = json_copy(val);
-	obj->values = values;
-
-	return 0;
+	obj->keys[obj->numkeys - 1] = copyofstring(key);
+	obj->values[obj->numkeys - 1] = json_copy(val);
 }
