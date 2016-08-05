@@ -15,16 +15,25 @@ typedef enum Jsontype{
 struct Jsonnode;
 typedef struct Jsonnode Jsonnode;
 
+Jsonnode *json_make_num(double val);
+Jsonnode *json_make_str(char *val);
+Jsonnode *json_make_bool(bool val);
+Jsonnode *json_make_null(void);
+
 typedef struct Jsonarray{
 	int length;
 	Jsonnode **elems;  // array
 } Jsonarray;
+Jsonnode *json_make_array(void);
+unsigned int json_array_add_item(Jsonarray *arr, Jsonnode *item);
 
 typedef struct Jsonobject{
 	int numkeys;
 	char **keys;  // array
 	Jsonnode **values;  // array
 } Jsonobject;
+Jsonnode *json_make_object(void);
+unsigned int json_object_add_key(Jsonobject *obj, char *key, Jsonnode *val);
 
 struct Jsonnode{
 	Jsontype type;

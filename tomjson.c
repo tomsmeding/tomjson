@@ -295,7 +295,7 @@ void json_free(Jsonnode *node){
 	switch(node->type){
 		case JSON_NUMBER:
 			break;
-		
+
 		case JSON_STRING:
 			assert(node->strval);
 			free(node->strval);
@@ -538,4 +538,92 @@ Jsonnode* json_copy(const Jsonnode *node){
 		}
 	}
 	return dst;
+}
+
+
+Jsonnode *json_make_num(double val) {
+	Jsonnode *node = malloc(sizeof(Jsonnode));
+	node->type = JSON_NUMBER;
+	node->numval = val;
+	return node;
+}
+
+Jsonnode *json_make_str(char *val) {
+	Jsonnode *node = malloc(sizeof(Jsonnode));
+	node->type = JSON_STRING;
+	node->strval = copyofstring(val);
+	return node;
+}
+
+Jsonnode *json_make_bool(bool val) {
+	Jsonnode *node = malloc(sizeof(Jsonnode));
+	node->type = JSON_BOOL;
+	node->boolval = val;
+	return node;
+}
+
+Jsonnode *json_make_null(void) {
+	Jsonnode *node = malloc(sizeof(Jsonnode));
+	node->type = JSON_NULL;
+	return node;
+}
+
+Jsonnode *json_make_object(void) {
+	Jsonnode *node = malloc(sizeof(Jsonnode));
+	Jsonobject obj = {
+		.numkeys = 0,
+		.keys = malloc(sizeof(char*)),
+		.values = malloc(sizeof(Jsonnode*)),
+	};
+
+	node->type = JSON_OBJECT;
+	node->objval = obj;
+
+	return node;
+}
+
+Jsonnode *json_make_array(void) {
+	Jsonnode *node = malloc(sizeof(Jsonnode));
+	Jsonarray arr = {
+		.length = 0,
+		.elems = malloc(sizeof(Jsonnode*)),
+	};
+
+	node->type = JSON_ARRAY;
+	node->arrval = arr;
+
+	return node;
+}
+
+
+unsigned int json_array_add_item(Jsonarray *arr, Jsonnode *item) {
+	arr->length++;
+
+	Jsonnode **elems = realloc(arr->elems, sizeof(Jsonnode*)*arr->length);
+	if (!elems) {
+		return 1;
+	}
+
+	elems[arr->length - 1] = json_copy(item);
+	arr->elems = elems;
+
+	return 0;
+}
+
+unsigned int json_object_add_key(Jsonobject *obj, char *key, Jsonnode *val) {
+	obj->numkeys++;
+
+	char **keys = realloc(obj->keys, sizeof(char*)*obj->numkeys);
+	Jsonnode **values = realloc(obj->values, sizeof(Jsonnode*)*obj->numkeys);
+	if (!keys || !values) {
+		return 1;
+	}
+
+	keys[obj->numkeys - 1] = copyofstring(key);
+	obj->keys = keys;
+
+	values[obj->numkeys - 1] = json_copy(val);
+	obj->values = values;
+
+	return 0;
 }
