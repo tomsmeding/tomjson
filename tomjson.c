@@ -599,7 +599,7 @@ Jsonnode *json_make_array(void) {
 }
 
 
-void json_array_add_item(Jsonarray *arr, Jsonnode *item) {
+void json_array_add_item(Jsonarray *arr, const Jsonnode *item) {
 	arr->length++;
 
 	arr->elems = realloc(arr->elems, arr->length*sizeof(Jsonnode*));
@@ -608,7 +608,7 @@ void json_array_add_item(Jsonarray *arr, Jsonnode *item) {
 	arr->elems[arr->length - 1] = json_copy(item);
 }
 
-void json_object_add_key(Jsonobject *obj, const char *key, Jsonnode *val) {
+void json_object_add_key(Jsonobject *obj, const char *key, const Jsonnode *val) {
 	obj->numkeys++;
 
 	obj->keys = realloc(obj->keys, obj->numkeys*sizeof(char*));

@@ -25,7 +25,7 @@ typedef struct Jsonarray{
 	Jsonnode **elems;  // array
 } Jsonarray;
 Jsonnode *json_make_array(void);
-void json_array_add_item(Jsonarray *arr, Jsonnode *item);
+void json_array_add_item(Jsonarray *arr, const Jsonnode *item);
 
 typedef struct Jsonobject{
 	int numkeys;
@@ -33,7 +33,7 @@ typedef struct Jsonobject{
 	Jsonnode **values;  // array
 } Jsonobject;
 Jsonnode *json_make_object(void);
-void json_object_add_key(Jsonobject *obj, const char *key, Jsonnode *val);
+void json_object_add_key(Jsonobject *obj, const char *key, const Jsonnode *val);
 
 struct Jsonnode{
 	Jsontype type;
