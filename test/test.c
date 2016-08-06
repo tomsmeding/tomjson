@@ -95,6 +95,18 @@
 		free(printbuf); \
 	} while(0)
 
+#define CHECKGETKEY(str,key,cond) \
+	do { \
+		char *printbuf; \
+		asprintf(&printbuf, "    let val = (%s).%s in %s: ", str, key, #cond); \
+		Jsonnode *_n=json_parse(str,strlen(str)); \
+		Jsonnode *val=json_object_get_item(&_n->objval, key); \
+		INCCOUNTS(cond); \
+		PRINTOK(printbuf); \
+		json_free(_n); \
+		if (val) json_free(val); \
+		free(printbuf); \
+	} while(0)
 
 #define SECTION(str, block) { \
 	int ran = 0, passed = 0; \
@@ -275,6 +287,9 @@ int main(int argc,char **argv){
 		Jsonnode *obj = json_make_object();
 		json_object_add_key(&obj->objval, "kaas", json_make_str("lekker"));
 		CHECKNODEGEN(obj, "{\"kaas\":\"lekker\"}");
+
+		CHECKGETKEY("{ \"a\": 1, \"b\": 2 }", "b", val->numval == 2);
+		CHECKGETKEY("{ \"foo\": 1 }", "bar", val == NULL);
 	});
 
 	bool successful = passedTotal == ranTotal;

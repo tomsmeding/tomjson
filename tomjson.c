@@ -619,3 +619,12 @@ void json_object_add_key(Jsonobject *obj, const char *key, const Jsonnode *val) 
 	obj->keys[obj->numkeys - 1] = copyofstring(key);
 	obj->values[obj->numkeys - 1] = json_copy(val);
 }
+
+Jsonnode *json_object_get_item(const Jsonobject *obj, const char *key) {
+	for (int i = 0; i < obj->numkeys; i++) {
+		if (strcmp(obj->keys[i], key) == 0) {
+			return json_copy(obj->values[i]);
+		}
+	}
+	return NULL;
+}
