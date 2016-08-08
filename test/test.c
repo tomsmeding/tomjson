@@ -264,7 +264,7 @@ int main(int argc,char **argv){
 		{Jsonnode *n=peanonumber(2); CHECKBIDIREQSAMENODE(n); json_free(n);}
 		{Jsonnode *n=peanonumber(7); CHECKBIDIREQSAMENODE(n); json_free(n);}
 
-		Jsonnode *arr = json_make_array();
+		Jsonnode *arr = json_make_array(1);
 		json_array_add_item(&arr->arrval, json_make_str("kaas"));
 		CHECKNODEGEN(arr, "[\"kaas\"]");
 	});
@@ -284,7 +284,7 @@ int main(int argc,char **argv){
 		CHECKBIDIREQ("{\"a\":\"\\u003c\t\\n\\fkaas\\\"\",\"iets\":[]}",
 		             "{\"a\":\"<\\t\\n\\fkaas\\\"\",\"iets\":[]}");
 
-		Jsonnode *obj = json_make_object();
+		Jsonnode *obj = json_make_object(1);
 		json_object_add_key(&obj->objval, "kaas", json_make_str("lekker"));
 		CHECKNODEGEN(obj, "{\"kaas\":\"lekker\"}");
 
