@@ -620,6 +620,16 @@ void json_array_add_item(Jsonarray *arr, const Jsonnode *item) {
 	arr->elems[arr->length - 1] = json_copy(item);
 }
 
+void json_array_remove_item(Jsonarray *arr, int index) {
+	assert(index >= 0 && index < arr->length);
+	memmove(
+		arr->elems + index,
+		arr->elems + index + 1,
+		(arr->length - index - 1) * sizeof(Jsonnode*)
+	);
+	arr->length--;
+}
+
 
 static void json_object_ensure_capacity(Jsonobject *obj, size_t capacity) {
 	while (obj->capacity < capacity) {

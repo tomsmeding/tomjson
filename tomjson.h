@@ -28,6 +28,7 @@ typedef struct Jsonarray{
 } Jsonarray;
 Jsonnode *json_make_array(size_t capacity);
 void json_array_add_item(Jsonarray *arr, const Jsonnode *item);
+void json_array_remove_item(Jsonarray *arr, int index);
 
 typedef struct Jsonobject{
 	int numkeys;
