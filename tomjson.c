@@ -642,10 +642,23 @@ static void json_object_ensure_capacity(Jsonobject *obj, size_t capacity) {
 }
 
 void json_object_add_key(Jsonobject *obj, const char *key, const Jsonnode *val) {
+	char *k = copyofstring(key);
+	Jsonnode *v = json_copy(val);
+
+	for (int i = 0; i < obj->numkeys; i++) {
+		if (strcmp(obj->keys[i], key) == 0) {
+			free(obj->keys[i]);
+			json_free(obj->values[i]);
+			obj->keys[i] = k;
+			obj->values[i] = v;
+			return;
+		}
+	}
+
 	obj->numkeys++;
 	json_object_ensure_capacity(obj, obj->numkeys);
-	obj->keys[obj->numkeys - 1] = copyofstring(key);
-	obj->values[obj->numkeys - 1] = json_copy(val);
+	obj->keys[obj->numkeys - 1] = k;
+	obj->values[obj->numkeys - 1] = v;
 }
 
 Jsonnode *json_object_get_item(const Jsonobject *obj, const char *key) {
