@@ -2,7 +2,7 @@ CC = gcc
 
 CFLAGS = -Wall -Wextra -std=c11 -fwrapv -fPIC
 ifdef DEBUG
-	CFLAGS += -g
+	CFLAGS += -g -DDEBUG
 else
 	CFLAGS += -O2
 endif

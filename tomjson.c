@@ -9,6 +9,12 @@
 
 static Jsonnode* json_parse_endp(const char *str,const char **endp);
 
+#ifdef DEBUG
+# define DBG(...) fprintf(stderr, __VA_ARGS__)
+#else
+# define DBG(...)
+#endif
+
 #define SKIPSPACES(str) \
 		do { \
 			while(*(str)&&isspace(*(str)))(str)++; \
@@ -608,6 +614,7 @@ Jsonnode *json_make_array(size_t capacity) {
 
 static void json_array_ensure_capacity(Jsonarray *arr, size_t capacity) {
 	while (arr->capacity < capacity) {
+		DBG("resizing arr->capacity to %lu from %lu\n", arr->capacity * 2, arr->capacity);
 		arr->capacity *= 2;
 	}
 	arr->elems = realloc(arr->elems, arr->capacity*sizeof(Jsonnode*));
@@ -633,6 +640,7 @@ void json_array_remove_item(Jsonarray *arr, int index) {
 
 static void json_object_ensure_capacity(Jsonobject *obj, size_t capacity) {
 	while (obj->capacity < capacity) {
+		DBG("resizing obj->capacity to %lu from %lu\n", obj->capacity * 2, obj->capacity);
 		obj->capacity *= 2;
 	}
 	obj->keys = realloc(obj->keys, obj->capacity*sizeof(char*));
@@ -647,6 +655,7 @@ void json_object_add_key(Jsonobject *obj, const char *key, const Jsonnode *val) 
 
 	for (int i = 0; i < obj->numkeys; i++) {
 		if (strcmp(obj->keys[i], key) == 0) {
+			DBG("overwriting previous object key '%s'\n", key);
 			free(obj->keys[i]);
 			json_free(obj->values[i]);
 			obj->keys[i] = k;
