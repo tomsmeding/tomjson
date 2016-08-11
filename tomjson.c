@@ -669,3 +669,22 @@ Jsonnode *json_object_get_item(const Jsonobject *obj, const char *key) {
 	}
 	return NULL;
 }
+
+void json_object_remove_item(Jsonobject *obj, const char *key) {
+	int i;
+	for (i = 0; i < obj->numkeys; i++) {
+		if (strcmp(obj->keys[i], key) == 0) break;
+	}
+	assert(i != obj->numkeys); // key doesn't exist
+	memmove(
+		obj->keys + i,
+		obj->keys + i + 1,
+		(obj->numkeys - i - 1) * sizeof(char*)
+	);
+	memmove(
+		obj->values + i,
+		obj->values + i + 1,
+		(obj->numkeys - i - 1) * sizeof(Jsonnode*)
+	);
+	obj->numkeys--;
+}

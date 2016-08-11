@@ -39,6 +39,7 @@ typedef struct Jsonobject{
 Jsonnode *json_make_object(size_t capacity);
 void json_object_add_key(Jsonobject *obj, const char *key, const Jsonnode *val);
 Jsonnode *json_object_get_item(const Jsonobject *obj, const char *key);
+void json_object_remove_item(Jsonobject *obj, const char *key);
 
 struct Jsonnode{
 	Jsontype type;
