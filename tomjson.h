@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stddef.h>
 #include <stdbool.h>
 
 
@@ -22,19 +23,23 @@ Jsonnode *json_make_null(void);
 
 typedef struct Jsonarray{
 	int length;
+	size_t capacity;
 	Jsonnode **elems;  // array
 } Jsonarray;
-Jsonnode *json_make_array(void);
+Jsonnode *json_make_array(size_t capacity);
 void json_array_add_item(Jsonarray *arr, const Jsonnode *item);
+void json_array_remove_item(Jsonarray *arr, int index);
 
 typedef struct Jsonobject{
 	int numkeys;
+	size_t capacity;
 	char **keys;  // array
 	Jsonnode **values;  // array
 } Jsonobject;
-Jsonnode *json_make_object(void);
+Jsonnode *json_make_object(size_t capacity);
 void json_object_add_key(Jsonobject *obj, const char *key, const Jsonnode *val);
 Jsonnode *json_object_get_item(const Jsonobject *obj, const char *key);
+void json_object_remove_item(Jsonobject *obj, const char *key);
 
 struct Jsonnode{
 	Jsontype type;

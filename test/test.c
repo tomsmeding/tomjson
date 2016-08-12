@@ -108,6 +108,18 @@
 		free(printbuf); \
 	} while(0)
 
+#define EXPECT(str, block) { \
+	bool ispassed = true; \
+	char *printbuf; \
+	asprintf(&printbuf, "    %s: ", str); \
+	block; \
+	INCCOUNTS(ispassed); \
+	PRINTOK(printbuf); \
+	free(printbuf); \
+}
+
+#define ASSERT(cond) if (!(cond)) ispassed = false;
+
 #define SECTION(str, block) { \
 	int ran = 0, passed = 0; \
 	bool ok; \
@@ -264,9 +276,36 @@ int main(int argc,char **argv){
 		{Jsonnode *n=peanonumber(2); CHECKBIDIREQSAMENODE(n); json_free(n);}
 		{Jsonnode *n=peanonumber(7); CHECKBIDIREQSAMENODE(n); json_free(n);}
 
-		Jsonnode *arr = json_make_array();
+		Jsonnode *arr = json_make_array(1);
 		json_array_add_item(&arr->arrval, json_make_str("kaas"));
 		CHECKNODEGEN(arr, "[\"kaas\"]");
+
+		EXPECT("resizing", {
+			Jsonnode *arrnode = json_make_array(0);
+			ASSERT(arrnode->arrval.capacity == 1);
+			json_array_add_item(&arrnode->arrval, json_make_str("a"));
+			json_array_add_item(&arrnode->arrval, json_make_str("b"));
+			ASSERT(arrnode->arrval.capacity == 2);
+			json_array_add_item(&arrnode->arrval, json_make_str("c"));
+			ASSERT(arrnode->arrval.capacity == 4);
+
+			char *str = json_stringify(arrnode);
+			ASSERT(strcmp(str, "[\"a\",\"b\",\"c\"]") == 0);
+			free(str);
+
+			json_free(arrnode);
+		});
+
+		EXPECT("item removal", {
+			const char *str = "[ 1,  2 ]";
+			Jsonnode *arrnode = json_parse(str, strlen(str));
+			ASSERT(arrnode->arrval.length == 2);
+			ASSERT(arrnode->arrval.elems[1]->numval == 2);
+			json_array_remove_item(&arrnode->arrval, 0);
+			ASSERT(arrnode->arrval.length == 1);
+			ASSERT(arrnode->arrval.elems[0]->numval == 2);
+			json_free(arrnode);
+		});
 	});
 
 	SECTION("objects", {
@@ -284,12 +323,39 @@ int main(int argc,char **argv){
 		CHECKBIDIREQ("{\"a\":\"\\u003c\t\\n\\fkaas\\\"\",\"iets\":[]}",
 		             "{\"a\":\"<\\t\\n\\fkaas\\\"\",\"iets\":[]}");
 
-		Jsonnode *obj = json_make_object();
+		Jsonnode *obj = json_make_object(1);
 		json_object_add_key(&obj->objval, "kaas", json_make_str("lekker"));
 		CHECKNODEGEN(obj, "{\"kaas\":\"lekker\"}");
 
 		CHECKGETKEY("{ \"a\": 1, \"b\": 2 }", "b", val->numval == 2);
 		CHECKGETKEY("{ \"foo\": 1 }", "bar", val == NULL);
+
+		EXPECT("resizing", {
+			Jsonnode *objnode = json_make_object(0);
+			ASSERT(objnode->objval.capacity == 1);
+			json_object_add_key(&objnode->objval, "0", json_make_str("a"));
+			json_object_add_key(&objnode->objval, "1", json_make_str("b"));
+			ASSERT(objnode->objval.capacity == 2);
+			json_object_add_key(&objnode->objval, "2", json_make_str("c"));
+			ASSERT(objnode->objval.capacity == 4);
+
+			char *str = json_stringify(objnode);
+			ASSERT(strcmp(str, "{\"0\":\"a\",\"1\":\"b\",\"2\":\"c\"}") == 0);
+			free(str);
+
+			json_free(objnode);
+		});
+
+		EXPECT("item removal", {
+			const char *str = "{ \"a\": 1, \"b\": 2 }";
+			Jsonnode *objnode = json_parse(str, strlen(str));
+			ASSERT(objnode->objval.numkeys == 2);
+			ASSERT(objnode->objval.values[1]->numval == 2);
+			json_object_remove_item(&objnode->objval, "a");
+			ASSERT(objnode->objval.numkeys == 1);
+			ASSERT(objnode->objval.values[0]->numval == 2);
+			json_free(objnode);
+		});
 	});
 
 	bool successful = passedTotal == ranTotal;
