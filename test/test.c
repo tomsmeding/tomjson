@@ -295,6 +295,17 @@ int main(int argc,char **argv){
 
 			json_free(arrnode);
 		});
+
+		EXPECT("item removal", {
+			const char *str = "[ 1,  2 ]";
+			Jsonnode *arrnode = json_parse(str, strlen(str));
+			ASSERT(arrnode->arrval.length == 2);
+			ASSERT(arrnode->arrval.elems[1]->numval == 2);
+			json_array_remove_item(&arrnode->arrval, 0);
+			ASSERT(arrnode->arrval.length == 1);
+			ASSERT(arrnode->arrval.elems[0]->numval == 2);
+			json_free(arrnode);
+		});
 	});
 
 	SECTION("objects", {
@@ -332,6 +343,17 @@ int main(int argc,char **argv){
 			ASSERT(strcmp(str, "{\"0\":\"a\",\"1\":\"b\",\"2\":\"c\"}") == 0);
 			free(str);
 
+			json_free(objnode);
+		});
+
+		EXPECT("item removal", {
+			const char *str = "{ \"a\": 1, \"b\": 2 }";
+			Jsonnode *objnode = json_parse(str, strlen(str));
+			ASSERT(objnode->objval.numkeys == 2);
+			ASSERT(objnode->objval.values[1]->numval == 2);
+			json_object_remove_item(&objnode->objval, "a");
+			ASSERT(objnode->objval.numkeys == 1);
+			ASSERT(objnode->objval.values[0]->numval == 2);
 			json_free(objnode);
 		});
 	});
