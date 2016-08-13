@@ -531,6 +531,7 @@ Jsonnode* json_copy(const Jsonnode *node){
 		}
 
 		case JSON_OBJECT:{
+			dst->objval.capacity=node->objval.capacity;
 			int nk=node->objval.numkeys;
 			dst->objval.numkeys=nk;
 			dst->objval.keys=malloc(nk*sizeof(char*));
