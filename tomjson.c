@@ -154,6 +154,7 @@ static Jsonnode* parsearray(const char *str,const char **endp){
 		Jsonnode *node=malloc(sizeof(Jsonnode));
 		assert(node);
 		node->type=JSON_ARRAY;
+		node->arrval.capacity=1;
 		node->arrval.length=0;
 		node->arrval.elems=malloc(1);
 		assert(node->arrval.elems);
@@ -188,6 +189,7 @@ static Jsonnode* parsearray(const char *str,const char **endp){
 	assert(node);
 	node->type=JSON_ARRAY;
 	node->arrval.length=length;
+	node->arrval.capacity=sz;
 	node->arrval.elems=elems;
 	*endp=cursor+1;
 	return node;
@@ -204,6 +206,7 @@ static Jsonnode* parseobject(const char *str,const char **endp){
 		Jsonnode *node=malloc(sizeof(Jsonnode));
 		assert(node);
 		node->type=JSON_OBJECT;
+		node->objval.capacity=1;
 		node->objval.numkeys=0;
 		node->objval.keys=malloc(1);
 		assert(node->objval.keys);
@@ -266,6 +269,7 @@ static Jsonnode* parseobject(const char *str,const char **endp){
 	assert(node);
 	node->type=JSON_OBJECT;
 	node->objval.numkeys=numkeys;
+	node->objval.capacity=sz;
 	node->objval.keys=keys;
 	node->objval.values=values;
 	*endp=cursor+1;
@@ -519,10 +523,11 @@ Jsonnode* json_copy(const Jsonnode *node){
 			break;
 
 		case JSON_ARRAY:{
-			dst->arrval.capacity=node->arrval.capacity;
 			int len=node->arrval.length;
+			size_t cap=node->arrval.capacity;
+			dst->arrval.capacity=cap;
 			dst->arrval.length=len;
-			dst->arrval.elems=malloc(len*sizeof(Jsonnode*));
+			dst->arrval.elems=malloc(cap*sizeof(Jsonnode*));
 			assert(dst->arrval.elems);
 			for(int i=0;i<len;i++){
 				dst->arrval.elems[i]=json_copy(node->arrval.elems[i]);
@@ -531,12 +536,13 @@ Jsonnode* json_copy(const Jsonnode *node){
 		}
 
 		case JSON_OBJECT:{
-			dst->objval.capacity=node->objval.capacity;
 			int nk=node->objval.numkeys;
+			size_t cap=node->objval.capacity;
+			dst->objval.capacity=cap;
 			dst->objval.numkeys=nk;
-			dst->objval.keys=malloc(nk*sizeof(char*));
+			dst->objval.keys=malloc(cap*sizeof(char*));
 			assert(dst->objval.keys);
-			dst->objval.values=malloc(nk*sizeof(Jsonnode*));
+			dst->objval.values=malloc(cap*sizeof(Jsonnode*));
 			assert(dst->objval.values);
 			for(int i=0;i<nk;i++){
 				dst->objval.keys[i]=copyofstring(node->objval.keys[i]);
