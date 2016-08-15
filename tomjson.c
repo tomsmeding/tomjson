@@ -636,6 +636,7 @@ void json_array_add_item(Jsonarray *arr, const Jsonnode *item) {
 
 void json_array_remove_item(Jsonarray *arr, int index) {
 	assert(index >= 0 && index < arr->length);
+	json_free(arr->elems[index]);
 	memmove(
 		arr->elems + index,
 		arr->elems + index + 1,
@@ -692,11 +693,13 @@ void json_object_remove_item(Jsonobject *obj, const char *key) {
 		if (strcmp(obj->keys[i], key) == 0) break;
 	}
 	assert(i != obj->numkeys); // key doesn't exist
+	free(obj->keys[i]);
 	memmove(
 		obj->keys + i,
 		obj->keys + i + 1,
 		(obj->numkeys - i - 1) * sizeof(char*)
 	);
+	json_free(obj->values[i]);
 	memmove(
 		obj->values + i,
 		obj->values + i + 1,
