@@ -687,6 +687,13 @@ Jsonnode *json_object_get_item(const Jsonobject *obj, const char *key) {
 	return NULL;
 }
 
+bool json_object_has_item(const Jsonobject *obj, const char *key) {
+	for (int i = 0; i < obj->numkeys; i++) {
+		if (strcmp(obj->keys[i], key) == 0) return true;
+	}
+	return false;
+}
+
 void json_object_remove_item(Jsonobject *obj, const char *key) {
 	int i;
 	for (i = 0; i < obj->numkeys; i++) {

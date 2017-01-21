@@ -108,6 +108,20 @@
 		free(printbuf); \
 	} while(0)
 
+#define CHECKHASITEMX(str,key,not) \
+	do { \
+		char *printbuf; \
+		asprintf(&printbuf, "    %s %s key %s: ", str, not false ? "does not have" : "has", key); \
+		Jsonnode *_n=json_parse(str,strlen(str)); \
+		INCCOUNTS(not json_object_has_item(&_n->objval, key)); \
+		PRINTOK(printbuf); \
+		json_free(_n); \
+		free(printbuf); \
+	} while(0)
+
+#define CHECKHASITEM(str,key) CHECKHASITEMX(str,key,)
+#define CHECKNOTHASITEM(str,key) CHECKHASITEMX(str,key,!)
+
 #define EXPECT(str, block) { \
 	bool ispassed = true; \
 	char *printbuf; \
@@ -327,7 +341,9 @@ int main(int argc,char **argv){
 		json_object_add_key(&obj->objval, "kaas", json_make_str("lekker"));
 		CHECKNODEGEN(obj, "{\"kaas\":\"lekker\"}");
 
+		CHECKHASITEM("{ \"a\": 1, \"b\": 2 }", "b");
 		CHECKGETKEY("{ \"a\": 1, \"b\": 2 }", "b", val->numval == 2);
+		CHECKNOTHASITEM("{ \"foo\": 1 }", "bar");
 		CHECKGETKEY("{ \"foo\": 1 }", "bar", val == NULL);
 
 		EXPECT("resizing", {
