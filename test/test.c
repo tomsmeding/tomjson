@@ -164,9 +164,9 @@ Jsonnode* peanonumber(int n){
 void perftest(void){
 #define TIMEIT(block) \
 		do { \
-			clock_t start=clock(); assert(start!=-1UL); \
+			clock_t start=clock(); assert(start!=(clock_t)-1UL); \
 			block \
-			clock_t end=clock(); assert(end!=-1UL); \
+			clock_t end=clock(); assert(end!=(clock_t)-1UL); \
 			clock_t diff=end-start; \
 			printf("[%1.6lfs] %s\n",(double)diff/CLOCKS_PER_SEC,#block); \
 		} while(0)
