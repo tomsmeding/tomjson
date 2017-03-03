@@ -151,10 +151,7 @@ Jsonnode* peanozero(void){
 }
 
 void peanosucc(Jsonnode *n){
-	Jsonnode *copy=json_copy(n);
-	n->arrval.length++;
-	n->arrval.elems=realloc(n->arrval.elems,n->arrval.length*sizeof(Jsonnode*));
-	n->arrval.elems[n->arrval.length-1]=copy;
+	json_array_add_item(&n->arrval,n);
 }
 
 Jsonnode* peanonumber(int n){
