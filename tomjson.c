@@ -320,6 +320,7 @@ void json_free(Jsonnode *node){
 		case JSON_ARRAY:
 			assert(node->arrval.length>=0);
 			assert(node->arrval.elems);
+			assert((size_t)node->arrval.length<=node->arrval.capacity);
 			for(int i=0;i<node->arrval.length;i++){
 				json_free(node->arrval.elems[i]);
 			}
@@ -629,9 +630,10 @@ static void json_array_ensure_capacity(Jsonarray *arr, size_t capacity) {
 }
 
 void json_array_add_item(Jsonarray *arr, const Jsonnode *item) {
+	Jsonnode *copy = json_copy(item);
 	arr->length++;
 	json_array_ensure_capacity(arr, arr->length);
-	arr->elems[arr->length - 1] = json_copy(item);
+	arr->elems[arr->length - 1] = copy;
 }
 
 void json_array_remove_item(Jsonarray *arr, int index) {
