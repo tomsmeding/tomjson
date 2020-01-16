@@ -7,43 +7,49 @@
 
 
 int main(int argc,char **argv){
-	(void)argv;
-	if(argc!=1){
-		printf("Does not expect to be called with arguments\n");
+	if(argc!=2){
+		printf("Pass file to parse as argument\n");
 		return 1;
 	}
 
-#ifdef __AFL_HAVE_MANUAL_CONTROL
-	__AFL_INIT();
-#endif
+	const char *fname=argv[1];
 
-	size_t bufsz=100;
+	__AFL_INIT();
+
+	size_t bufsz=4096;
 	char *buf=malloc(bufsz);
 	assert(buf);
-	size_t cursor=0;
 
-	while(true){
-		if(bufsz-cursor<bufsz/4){
-			bufsz*=2;
-			buf=realloc(buf,bufsz);
-			assert(buf);
+	while(__AFL_LOOP(1000)){
+		FILE *f=fopen(fname,"r");
+		assert(f);
+
+		size_t cursor=0;
+		while(true){
+			if(bufsz-cursor<bufsz/4){
+				bufsz*=2;
+				buf=realloc(buf,bufsz);
+				assert(buf);
+			}
+			size_t nr=fread(buf+cursor,1,bufsz-cursor,f);
+			if(nr==0){
+				assert(!ferror(f));
+				assert(feof(f));
+				break;
+			}
+			cursor+=nr;
 		}
-		size_t nr=fread(buf+cursor,1,bufsz-cursor,stdin);
-		if(nr==0){
-			assert(!ferror(stdin));
-			assert(feof(stdin));
-			break;
+
+		fclose(f);
+
+		assert((size_t)(int)cursor==cursor);
+
+		Jsonnode *node=json_parse(buf,cursor);
+		if(node){
+			printf("Valid JSON\n");
+			json_free(node);
+		} else {
+			printf("Invalid JSON\n");
 		}
-		cursor+=nr;
 	}
-
-	assert((size_t)(int)cursor==cursor);
-
-	Jsonnode *node=json_parse(buf,cursor);
-	if(!node){
-		printf("Invalid JSON\n");
-		return 1;
-	}
-	printf("Valid JSON\n");
-	json_free(node);
 }

@@ -13,10 +13,10 @@ clean:
 	rm -f fuzz
 
 run: fuzz
-	env $(ENVVARS) afl-fuzz -i testdir -o outdir -m none -x /usr/share/afl/dictionaries/json.dict ./fuzz
+	env $(ENVVARS) afl-fuzz -i testdir -o outdir -m none -x /usr/share/afl/dictionaries/json.dict ./fuzz @@
 
 resume: fuzz
-	env $(ENVVARS) afl-fuzz -i - -o outdir -m none -x /usr/share/afl/dictionaries/json.dict ./fuzz
+	env $(ENVVARS) afl-fuzz -i - -o outdir -m none -x /usr/share/afl/dictionaries/json.dict ./fuzz @@
 
 fuzz: fuzz.c
 	env $(ENVVARS) $(CC) $(CFLAGS) -o $@ $< ../libtomjson.a
