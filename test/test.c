@@ -227,7 +227,7 @@ int main(int argc,char **argv){
 		CHECKJSON("21.4e-3");
 		CHECKJSONERR("123a");
 
-		// non standard complaint extensions
+		// non standards-compliant extensions
 		CHECKJSON("NaN");
 		CHECKJSON("Infinity");
 		CHECKJSON("-Infinity");
