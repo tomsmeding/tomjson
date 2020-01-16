@@ -7,7 +7,11 @@
 #include "tomjson.h"
 
 
-static Jsonnode* json_parse_endp(const char *str,const char *bufend,const char **endp);
+// To prevent stack overflows
+#define NESTING_LIMIT 100
+
+
+static Jsonnode* json_parse_endp(const char *str,const char *bufend,const char **endp,int depth);
 
 #ifdef DEBUG
 # define DBG(...) fprintf(stderr, __VA_ARGS__)
@@ -149,7 +153,8 @@ static Jsonnode* parsenull(const char *str,const char *bufend,const char **endp)
 	return NULL;
 }
 
-static Jsonnode* parsearray(const char *str,const char *bufend,const char **endp){
+static Jsonnode* parsearray(const char *str,const char *bufend,const char **endp,int depth){
+	if(depth>NESTING_LIMIT)return NULL;
 	SKIPSPACESRETNULL(str,bufend);
 	if(str>=bufend||str[0]!='[')return NULL;
 	const char *cursor=str+1;
@@ -181,7 +186,7 @@ static Jsonnode* parsearray(const char *str,const char *bufend,const char **endp
 	//fprintf(stderr,"ARR: start\n");
 	while(cursor<bufend&&*cursor){
 		const char *elemend;
-		Jsonnode *elem=json_parse_endp(cursor,bufend,&elemend);
+		Jsonnode *elem=json_parse_endp(cursor,bufend,&elemend,depth+1);
 		//fprintf(stderr,"ARR: elem %p, parsing from %s\n",elem,cursor);
 		if(!elem)FAILRETURN;
 		if(length==sz){
@@ -211,7 +216,8 @@ static Jsonnode* parsearray(const char *str,const char *bufend,const char **endp
 #undef FAILRETURN
 }
 
-static Jsonnode* parseobject(const char *str,const char *bufend,const char **endp){
+static Jsonnode* parseobject(const char *str,const char *bufend,const char **endp,int depth){
+	if(depth>NESTING_LIMIT)return NULL;
 	SKIPSPACESRETNULL(str,bufend);
 	if(str+2>bufend)return NULL;
 	if(*str!='{')return NULL;
@@ -257,7 +263,7 @@ static Jsonnode* parseobject(const char *str,const char *bufend,const char **end
 		}
 		cursor=keyend+1;
 		SKIPSPACES(cursor,bufend);
-		Jsonnode *valnode=json_parse_endp(cursor,bufend,&valend);
+		Jsonnode *valnode=json_parse_endp(cursor,bufend,&valend,depth+1);
 		if(!valnode){
 			json_free(keynode);
 			FAILRETURN;
@@ -296,21 +302,22 @@ static Jsonnode* parseobject(const char *str,const char *bufend,const char **end
 }
 
 
-static Jsonnode* json_parse_endp(const char *str,const char *bufend,const char **endp){
+static Jsonnode* json_parse_endp(const char *str,const char *bufend,const char **endp,int depth){
+	if(depth>NESTING_LIMIT)return NULL;
 	Jsonnode *node;
-	node=parsenumber(str,bufend,endp); if(node){SKIPSPACES(*endp,bufend); return node;}
-	node=parsestring(str,bufend,endp); if(node){SKIPSPACES(*endp,bufend); return node;}
-	node=parsebool  (str,bufend,endp); if(node){SKIPSPACES(*endp,bufend); return node;}
-	node=parsenull  (str,bufend,endp); if(node){SKIPSPACES(*endp,bufend); return node;}
-	node=parsearray (str,bufend,endp); if(node){SKIPSPACES(*endp,bufend); return node;}
-	node=parseobject(str,bufend,endp); if(node){SKIPSPACES(*endp,bufend); return node;}
+	node=parsenumber(str,bufend,endp);       if(node){SKIPSPACES(*endp,bufend); return node;}
+	node=parsestring(str,bufend,endp);       if(node){SKIPSPACES(*endp,bufend); return node;}
+	node=parsebool  (str,bufend,endp);       if(node){SKIPSPACES(*endp,bufend); return node;}
+	node=parsenull  (str,bufend,endp);       if(node){SKIPSPACES(*endp,bufend); return node;}
+	node=parsearray (str,bufend,endp,depth); if(node){SKIPSPACES(*endp,bufend); return node;}
+	node=parseobject(str,bufend,endp,depth); if(node){SKIPSPACES(*endp,bufend); return node;}
 	return NULL;
 }
 
 Jsonnode* json_parse(const char *str,int length){
 	const char *bufend=str+length;
 	const char *endp;
-	Jsonnode *node=json_parse_endp(str,bufend,&endp);
+	Jsonnode *node=json_parse_endp(str,bufend,&endp,0);
 	if(!node)return NULL;
 	if(endp-str==length)return node;
 	json_free(node);
