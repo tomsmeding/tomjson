@@ -18,5 +18,5 @@ run: fuzz
 resume: fuzz
 	env $(ENVVARS) afl-fuzz -i - -o outdir -m none -x /usr/share/afl/dictionaries/json.dict ./fuzz @@
 
-fuzz: fuzz.c
-	env $(ENVVARS) $(CC) $(CFLAGS) -o $@ $< ../libtomjson.a
+fuzz: fuzz.c ../tomjson.c
+	env $(ENVVARS) $(CC) $(CFLAGS) -o $@ $^
